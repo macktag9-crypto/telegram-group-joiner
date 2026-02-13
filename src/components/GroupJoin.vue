@@ -152,14 +152,9 @@
                 <v-icon :title="item.status" icon="mdi-check" color="success" v-if="item.status == 'joined'"></v-icon>
                 <v-icon :title="item.status" icon="mdi-account-clock" color="warning"
                   v-if="item.status == 'requested'"></v-icon>
-                <v-icon :title="item.status" icon="mdi-link-off" color="error" 
-                  v-if="['expired', 'invalid'].includes(item.status)"></v-icon>
-                <v-icon :title="item.status" icon="mdi-account-off" color="error" 
-                  v-if="item.status == 'banned'"></v-icon>
-                <v-icon :title="item.status" icon="mdi-alert" color="warning" 
-                  v-if="['limit_reached', 'privacy_restricted', 'error'].includes(item.status)"></v-icon>
+                <v-icon :title="item.status" icon="mdi-link-off" color="error" v-if="item.status == 'expired'"></v-icon>
                 <v-icon :title="item.status" icon="mdi-close" color="error"
-                  v-if="!['requested', 'pending', 'joined', 'expired', 'invalid', 'banned', 'limit_reached', 'privacy_restricted', 'error'].includes(item.status)"></v-icon>
+                  v-if="!['requested', 'pending', 'joined'].includes(item.status)"></v-icon>
               </template>
               <v-list-item-content>
                 <v-list-item-title>
@@ -480,21 +475,10 @@ const joinGroups = () => {
         upsert(loadedGroups.value, group.invite, { status: "joined" })
         continue
       }
-      try {
-        if (group.type == 'private') {
-          await joinPrivateGroup(group)
-        } else {
-          await joinPublicGroup(group)
-        }
-      } catch (error) {
-        // Log error but continue processing
-        console.error(`Error processing ${group.invite}:`, error)
-        upsert(loadedGroups.value, group.invite, { 
-          status: 'error',
-          error: error.message 
-        })
-        // Continue to next group
-        continue
+      if (group.type == 'private') {
+        await joinPrivateGroup(group)
+      } else {
+        await joinPublicGroup(group)
       }
     }
     loading.value = false;
@@ -552,17 +536,8 @@ const joinPrivateGroup = async (group) => {
         upsert(loadedGroups.value, group.invite, { status: 'joined' })
       } else if (res.message == "INVITE_HASH_EXPIRED") {
         upsert(loadedGroups.value, group.invite, { status: 'expired' })
-      } else if (res.message == "INVITE_HASH_INVALID") {
-        upsert(loadedGroups.value, group.invite, { status: 'invalid' })
-      } else if (res.message == "USER_BANNED_IN_CHANNEL") {
-        upsert(loadedGroups.value, group.invite, { status: 'banned' })
-      } else if (res.message == "CHANNELS_TOO_MUCH") {
-        upsert(loadedGroups.value, group.invite, { status: 'limit_reached' })
-      } else if (res.message == "USER_PRIVACY_RESTRICTED") {
-        upsert(loadedGroups.value, group.invite, { status: 'privacy_restricted' })
       } else {
         chatExceptions.value.set(group.id, res.message)
-        upsert(loadedGroups.value, group.invite, { status: 'error', error: res.message })
       }
       if (muteJoinedGroups.value) {
         muteJoinedGroup(group)
