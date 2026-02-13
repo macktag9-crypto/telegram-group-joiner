@@ -517,6 +517,10 @@ const joinPrivateGroup = async (group) => {
     upsert(loadedGroups.value, group.invite, { name: res.title })
     group.id = res.chat_id;
     upsert(loadedGroups.value, group.invite, { id: res.chat_id })
+  }).catch((error) => {
+    console.error(`checkChatInviteLink failed for ${group.invite}:`, error)
+    upsert(loadedGroups.value, group.invite, { status: 'error' })
+    return true
   })
   if (checkRateLimit) return
 
@@ -569,6 +573,10 @@ const joinPublicGroup = async (group) => {
       upsert(loadedGroups.value, group.invite, { name: res.title })
       group.id = res.id;
       upsert(loadedGroups.value, group.invite, { id: res.id })
+    }).catch((error) => {
+      console.error(`searchPublicChat failed for ${group.invite}:`, error)
+      upsert(loadedGroups.value, group.invite, { status: 'error' })
+      return true
     })
     if (checkRateLimit) return
   }
