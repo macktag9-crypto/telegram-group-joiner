@@ -475,10 +475,17 @@ const joinGroups = () => {
         upsert(loadedGroups.value, group.invite, { status: "joined" })
         continue
       }
-      if (group.type == 'private') {
-        await joinPrivateGroup(group)
-      } else {
-        await joinPublicGroup(group)
+      
+      try {
+        if (group.type == 'private') {
+          await joinPrivateGroup(group)
+        } else {
+          await joinPublicGroup(group)
+        }
+      } catch (error) {
+        // Log error but continue processing remaining links
+        console.error(`Error processing ${group.invite}:`, error)
+        upsert(loadedGroups.value, group.invite, { status: 'error' })
       }
     }
     loading.value = false;
